@@ -12,6 +12,7 @@ public class Client : MonoBehaviour
     private const string SERVER_IP = "127.0.0.1";
 
     private byte reliableChannel;
+    private int connectionId;
     private int hostId;
     private byte error;
 
@@ -46,7 +47,7 @@ public class Client : MonoBehaviour
         Debug.Log("Connecting from Web");
 #else
         // Standalone Client
-        NetworkTransport.Connect(hostId, SERVER_IP, PORT, 0, out error);
+        connectionId = NetworkTransport.Connect(hostId, SERVER_IP, PORT, 0, out error);
         Debug.Log("Connecting from standalone");
 #endif
 
@@ -97,4 +98,17 @@ public class Client : MonoBehaviour
                 break;
         }
     }
+
+    #region Send
+    public void SendServer()
+    {
+        //  this is where we hold our data
+        byte[] buffer = new byte[BYTE_SIZE];
+
+        // this is where yuo will crush your data into byte[]
+        buffer[0] = 255;
+
+        NetworkTransport.Send(hostId, connectionId, reliableChannel, buffer, BYTE_SIZE, out error);
+    }
+    #endregion
 }
