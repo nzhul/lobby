@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
+using UnityEngine;
 using UnityEngine.Networking;
 
 public class Server : MonoBehaviour
@@ -32,13 +34,13 @@ public class Server : MonoBehaviour
         NetworkTransport.Init();
 
         ConnectionConfig connectionConfig = new ConnectionConfig();
-        this.reliableChannel = connectionConfig.AddChannel(QosType.Reliable);
+        reliableChannel = connectionConfig.AddChannel(QosType.Reliable);
 
         HostTopology topo = new HostTopology(connectionConfig, MAX_USER);
 
         // SERVER only code
-        this.hostId = NetworkTransport.AddHost(topo, PORT, null);
-        this.webHostId = NetworkTransport.AddWebsocketHost(topo, WEB_PORT, null);
+        hostId = NetworkTransport.AddHost(topo, PORT, null);
+        webHostId = NetworkTransport.AddWebsocketHost(topo, WEB_PORT, null);
 
         Debug.Log(string.Format("Opening connection on port {0} and webport {1}", PORT, WEB_PORT));
 
@@ -57,20 +59,20 @@ public class Server : MonoBehaviour
         {
             return;
         }
-
-        int recievingHostId; // Is this from Web ? Or standalone
-        int connectionId; // Which user is sending me this ?
-        int channelId; // Which lane is he sending that message from
+        // Which lane is he sending that message from
 
         byte[] recBuffer = new byte[BYTE_SIZE];
-        int dataSize;
 
-        NetworkEventType type = NetworkTransport.Receive(out recievingHostId, out connectionId, out channelId, recBuffer, BYTE_SIZE, out dataSize, out error);
+        NetworkEventType type = NetworkTransport.Receive(out int recievingHostId, out int connectionId, out int channelId, recBuffer, BYTE_SIZE, out int dataSize, out error);
 
         switch (type)
         {
             case NetworkEventType.DataEvent:
-                Debug.Log("Data");
+                BinaryFormatter formatter = new BinaryFormatter();
+                MemoryStream ms = new MemoryStream(recBuffer);
+                NetMessage msg = (NetMessage)formatter.Deserialize(ms);
+
+                OnData(connectionId, channelId, recievingHostId, msg);
                 break;
             case NetworkEventType.ConnectEvent:
                 Debug.Log(string.Format("User {0} has connected throught host {1}", connectionId, recievingHostId));
@@ -87,4 +89,50 @@ public class Server : MonoBehaviour
                 break;
         }
     }
+    #region OnData
+    private void OnData(int connectionId, int channelId, int recievingHostId, NetMessage msg)
+    {
+        switch (msg.OperationCode)
+        {
+            case NetOperationCode.None:
+                Debug.Log("Unexpected NETOperationCode");
+                break;
+            case NetOperationCode.CreateAccount:
+                CreateAccount(connectionId, channelId, recievingHostId, (Net_CreateAccount)msg);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void CreateAccount(int connectionId, int channelId, int recievingHostId, Net_CreateAccount msg)
+    {
+        Debug.Log(string.Format("{0},{1},{2}", msg.Username, msg.Password, msg.Email));
+    }
+    #endregion
+
+    #region Send
+    public void SendClient(int recHost, int connectionId, NetMessage msg)
+    {
+        //  this is where we hold our data
+        byte[] buffer = new byte[BYTE_SIZE];
+
+        // this is where yuo will crush your data into byte[]
+
+        BinaryFormatter formatter = new BinaryFormatter();
+        MemoryStream ms = new MemoryStream(buffer);
+        formatter.Serialize(ms, msg);
+
+        if (recHost == 0)
+        {
+            NetworkTransport.Send(hostId, connectionId, reliableChannel, buffer, BYTE_SIZE, out error);
+        }
+        else
+        {
+            NetworkTransport.Send(webHostId, connectionId, reliableChannel, buffer, BYTE_SIZE, out error);
+        }
+
+
+    }
+    #endregion
 }

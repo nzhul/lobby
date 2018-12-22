@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
+using UnityEngine;
 using UnityEngine.Networking;
 
 public class Client : MonoBehaviour
@@ -81,7 +83,11 @@ public class Client : MonoBehaviour
         switch (type)
         {
             case NetworkEventType.DataEvent:
-                Debug.Log("Data");
+                BinaryFormatter formatter = new BinaryFormatter();
+                MemoryStream ms = new MemoryStream(recBuffer);
+                NetMessage msg = (NetMessage)formatter.Deserialize(ms);
+
+                OnData(connectionId, channelId, recievingHostId, msg);
                 break;
             case NetworkEventType.ConnectEvent:
                 Debug.Log("We have connected to the server");
@@ -99,16 +105,43 @@ public class Client : MonoBehaviour
         }
     }
 
+    #region OnData
+    private void OnData(int connectionId, int channelId, int recievingHostId, NetMessage msg)
+    {
+        switch (msg.OperationCode)
+        {
+            case NetOperationCode.None:
+                Debug.Log("Unexpected NETOperationCode");
+                break;
+            default:
+                break;
+        }
+    }
+    #endregion
+
     #region Send
-    public void SendServer()
+    public void SendServer(NetMessage msg)
     {
         //  this is where we hold our data
         byte[] buffer = new byte[BYTE_SIZE];
 
         // this is where yuo will crush your data into byte[]
-        buffer[0] = 255;
+
+        BinaryFormatter formatter = new BinaryFormatter();
+        MemoryStream ms = new MemoryStream(buffer);
+        formatter.Serialize(ms, msg);
 
         NetworkTransport.Send(hostId, connectionId, reliableChannel, buffer, BYTE_SIZE, out error);
     }
     #endregion
+
+    public void TESTFUNCTIONCREATEACCOUNT()
+    {
+        Net_CreateAccount ca = new Net_CreateAccount();
+        ca.Username = "nzhul";
+        ca.Password = "qwer";
+        ca.Email = "qwer@abv.bg";
+
+        SendServer(ca);
+    }
 }
