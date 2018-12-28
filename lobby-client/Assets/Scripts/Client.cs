@@ -5,6 +5,7 @@ using UnityEngine.Networking;
 
 public class Client : MonoBehaviour
 {
+    public static Client Instance { get; private set; }
 
     private const int MAX_USER = 100;
     private const int PORT = 26000;
@@ -22,6 +23,7 @@ public class Client : MonoBehaviour
 
     private void Start()
     {
+        Instance = this;
         DontDestroyOnLoad(gameObject);
         Init();
     }
@@ -113,9 +115,36 @@ public class Client : MonoBehaviour
             case NetOperationCode.None:
                 Debug.Log("Unexpected NETOperationCode");
                 break;
+            case NetOperationCode.OnCreateAccount:
+                OnCreateAccount((Net_OnCreateAccount)msg);
+                break;
+            case NetOperationCode.OnLoginRequest:
+                OnLoginRequest((Net_OnLoginRequest)msg);
+                break; 
             default:
                 break;
         }
+    }
+
+    private void OnLoginRequest(Net_OnLoginRequest msg)
+    {
+        LobbySceneManager.Instance.ChangeAuthenticationMessage(msg.Information);
+
+        if (msg.Success != 0)
+        {
+            // Unable to login
+            LobbySceneManager.Instance.EnableInputs();
+        }
+        else
+        {
+            // Successfull login
+        }
+    }
+
+    private void OnCreateAccount(Net_OnCreateAccount msg)
+    {
+        LobbySceneManager.Instance.EnableInputs();
+        LobbySceneManager.Instance.ChangeAuthenticationMessage(msg.Information);
     }
     #endregion
 
@@ -133,15 +162,25 @@ public class Client : MonoBehaviour
 
         NetworkTransport.Send(hostId, connectionId, reliableChannel, buffer, BYTE_SIZE, out error);
     }
-    #endregion
 
-    public void TESTFUNCTIONCREATEACCOUNT()
+    public void SendCreateAccount(string username, string password, string email)
     {
-        Net_CreateAccount ca = new Net_CreateAccount();
-        ca.Username = "nzhul";
-        ca.Password = "qwer";
-        ca.Email = "qwer@abv.bg";
+        Net_CreateAccount msg = new Net_CreateAccount();
+        msg.Username = username;
+        msg.Password = password;
+        msg.Email = email;
 
-        SendServer(ca);
+        SendServer(msg);
     }
+
+    public void SendLoginRequest(string usernameOrEmail, string password)
+    {
+        Net_LoginRequest msg = new Net_LoginRequest();
+        msg.UsernameOrEmail = usernameOrEmail;
+        msg.Password = password;
+
+        SendServer(msg);
+    }
+
+    #endregion
 }

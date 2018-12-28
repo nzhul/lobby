@@ -16,6 +16,8 @@ public class Server : MonoBehaviour
     private int webHostId;
     private byte error;
 
+    private Mongo db;
+
     private bool isStarted;
 
     private void Start()
@@ -31,6 +33,9 @@ public class Server : MonoBehaviour
 
     public void Init()
     {
+        db = new Mongo();
+        db.Init();
+
         NetworkTransport.Init();
 
         ConnectionConfig connectionConfig = new ConnectionConfig();
@@ -45,6 +50,10 @@ public class Server : MonoBehaviour
         Debug.Log(string.Format("Opening connection on port {0} and webport {1}", PORT, WEB_PORT));
 
         isStarted = true;
+
+        // $$ TEST
+
+        // db.InsertAccount("dido", "qwe123", "qwe@abv.bg");
     }
 
     public void Shutdown()
@@ -63,7 +72,12 @@ public class Server : MonoBehaviour
 
         byte[] recBuffer = new byte[BYTE_SIZE];
 
-        NetworkEventType type = NetworkTransport.Receive(out int recievingHostId, out int connectionId, out int channelId, recBuffer, BYTE_SIZE, out int dataSize, out error);
+        int recievingHostId;
+        int connectionId;
+        int channelId;
+        int dataSize;
+
+        NetworkEventType type = NetworkTransport.Receive(out recievingHostId, out connectionId, out channelId, recBuffer, BYTE_SIZE, out dataSize, out error);
 
         switch (type)
         {
@@ -100,6 +114,9 @@ public class Server : MonoBehaviour
             case NetOperationCode.CreateAccount:
                 CreateAccount(connectionId, channelId, recievingHostId, (Net_CreateAccount)msg);
                 break;
+            case NetOperationCode.LoginRequest:
+                LoginRequest(connectionId, channelId, recievingHostId, (Net_LoginRequest)msg);
+                break;
             default:
                 break;
         }
@@ -108,7 +125,27 @@ public class Server : MonoBehaviour
     private void CreateAccount(int connectionId, int channelId, int recievingHostId, Net_CreateAccount msg)
     {
         Debug.Log(string.Format("{0},{1},{2}", msg.Username, msg.Password, msg.Email));
+
+        Net_OnCreateAccount rmsg = new Net_OnCreateAccount();
+        rmsg.Success = 0;
+        rmsg.Information = "Account was created!";
+
+        SendClient(recievingHostId, connectionId, rmsg);
     }
+
+    private void LoginRequest(int connectionId, int channelId, int recievingHostId, Net_LoginRequest msg)
+    {
+        Debug.Log(string.Format("{0},{1}", msg.UsernameOrEmail, msg.Password));
+
+        Net_OnLoginRequest rmsg = new Net_OnLoginRequest();
+        rmsg.Success = 0;
+        rmsg.Information = "Everything is good";
+        rmsg.Username = "nzhul";
+        rmsg.Discriminator = "0000";
+
+        SendClient(recievingHostId, connectionId, rmsg);
+    }
+
     #endregion
 
     #region Send
