@@ -120,7 +120,7 @@ public class Client : MonoBehaviour
                 break;
             case NetOperationCode.OnLoginRequest:
                 OnLoginRequest((Net_OnLoginRequest)msg);
-                break; 
+                break;
             default:
                 break;
         }
@@ -130,7 +130,7 @@ public class Client : MonoBehaviour
     {
         LobbySceneManager.Instance.ChangeAuthenticationMessage(msg.Information);
 
-        if (msg.Success != 0)
+        if (msg.Success != 1)
         {
             // Unable to login
             LobbySceneManager.Instance.EnableInputs();
@@ -165,20 +165,63 @@ public class Client : MonoBehaviour
 
     public void SendCreateAccount(string username, string password, string email)
     {
+        if (!Utility.IsUsername(username))
+        {
+            // Invalid username
+            LobbySceneManager.Instance.ChangeAuthenticationMessage("Username is invalid!");
+            LobbySceneManager.Instance.EnableInputs();
+            return;
+        }
+
+        if (!Utility.IsUsername(username))
+        {
+            // Invalid username
+            LobbySceneManager.Instance.ChangeAuthenticationMessage("Email is invalid!");
+            LobbySceneManager.Instance.EnableInputs();
+            return;
+        }
+
+        if (string.IsNullOrEmpty(password))
+        {
+            // Invalid username
+            LobbySceneManager.Instance.ChangeAuthenticationMessage("Password is empty!");
+            LobbySceneManager.Instance.EnableInputs();
+            return;
+        }
+
         Net_CreateAccount msg = new Net_CreateAccount();
+
         msg.Username = username;
-        msg.Password = password;
+        msg.Password = Utility.Sha256FromString(password);
         msg.Email = email;
 
+        LobbySceneManager.Instance.ChangeAuthenticationMessage("Sending request ...");
         SendServer(msg);
     }
 
     public void SendLoginRequest(string usernameOrEmail, string password)
     {
+        if (!Utility.IsUsernameAndDiscriminator(usernameOrEmail) && !Utility.IsEmail(usernameOrEmail))
+        {
+            // Invalid username
+            LobbySceneManager.Instance.ChangeAuthenticationMessage("Email or Username#Discriminator is invalid");
+            LobbySceneManager.Instance.EnableInputs();
+            return;
+        }
+
+        if (string.IsNullOrEmpty(password))
+        {
+            // Invalid username
+            LobbySceneManager.Instance.ChangeAuthenticationMessage("Password is empty!");
+            LobbySceneManager.Instance.EnableInputs();
+            return;
+        }
+
         Net_LoginRequest msg = new Net_LoginRequest();
         msg.UsernameOrEmail = usernameOrEmail;
-        msg.Password = password;
+        msg.Password = Utility.Sha256FromString(password);
 
+        LobbySceneManager.Instance.ChangeAuthenticationMessage("Sending login request ...");
         SendServer(msg);
     }
 

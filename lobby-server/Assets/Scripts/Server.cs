@@ -50,10 +50,6 @@ public class Server : MonoBehaviour
         Debug.Log(string.Format("Opening connection on port {0} and webport {1}", PORT, WEB_PORT));
 
         isStarted = true;
-
-        // $$ TEST
-
-        // db.InsertAccount("dido", "qwe123", "qwe@abv.bg");
     }
 
     public void Shutdown()
@@ -124,24 +120,42 @@ public class Server : MonoBehaviour
 
     private void CreateAccount(int connectionId, int channelId, int recievingHostId, Net_CreateAccount msg)
     {
-        Debug.Log(string.Format("{0},{1},{2}", msg.Username, msg.Password, msg.Email));
-
         Net_OnCreateAccount rmsg = new Net_OnCreateAccount();
-        rmsg.Success = 0;
-        rmsg.Information = "Account was created!";
+
+        if (db.InsertAccount(msg.Username, msg.Password, msg.Email))
+        {
+            rmsg.Success = 1;
+            rmsg.Information = "Account was created!";
+        }
+        else
+        {
+            rmsg.Success = 0;
+            rmsg.Information = "There was an error creating the account!";
+        }
 
         SendClient(recievingHostId, connectionId, rmsg);
     }
 
     private void LoginRequest(int connectionId, int channelId, int recievingHostId, Net_LoginRequest msg)
     {
-        Debug.Log(string.Format("{0},{1}", msg.UsernameOrEmail, msg.Password));
-
+        string randomToken = Utility.GenerateRandom(4);
+        AccountModel dbAccount = db.LoginAccount(msg.UsernameOrEmail, msg.Password, connectionId, randomToken);
         Net_OnLoginRequest rmsg = new Net_OnLoginRequest();
-        rmsg.Success = 0;
-        rmsg.Information = "Everything is good";
-        rmsg.Username = "nzhul";
-        rmsg.Discriminator = "0000";
+
+        if (dbAccount != null)
+        {
+
+            rmsg.Success = 1;
+            rmsg.Information = "You've been logged in as " + dbAccount.Username;
+            rmsg.Username = dbAccount.Username;
+            rmsg.Discriminator = dbAccount.Discriminator;
+            rmsg.Token = randomToken;
+            rmsg.ConnectionId = connectionId;
+        }
+        else
+        {
+            rmsg.Success = 0;
+        }
 
         SendClient(recievingHostId, connectionId, rmsg);
     }
