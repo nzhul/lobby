@@ -1,9 +1,9 @@
 ﻿using TMPro;
 using UnityEngine;
 
-public class LobbySceneManager : MonoBehaviour
+public class LobbyScene : MonoBehaviour
 {
-    public static LobbySceneManager Instance { get; set; }
+    public static LobbyScene Instance { get; set; }
 
 
 

@@ -13,6 +13,7 @@ public class Mongo
     private MongoDatabase db;
 
     private MongoCollection<AccountModel> accounts;
+    private MongoCollection<FollowModel> follows;
 
     public void Init()
     {
@@ -22,6 +23,7 @@ public class Mongo
 
         // This is where we would initialize collections
         accounts = db.GetCollection<AccountModel>("account");
+        follows = db.GetCollection<FollowModel>("follow");
 
         Debug.Log("Database has been initialized");
     }

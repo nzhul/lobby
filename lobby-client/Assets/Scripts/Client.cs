@@ -19,7 +19,10 @@ public class Client : MonoBehaviour
     private int hostId;
     private byte error;
 
+    public Account self;
+    private string token;
     private bool isStarted;
+
 
     private void Start()
     {
@@ -128,23 +131,32 @@ public class Client : MonoBehaviour
 
     private void OnLoginRequest(Net_OnLoginRequest msg)
     {
-        LobbySceneManager.Instance.ChangeAuthenticationMessage(msg.Information);
+        LobbyScene.Instance.ChangeAuthenticationMessage(msg.Information);
 
         if (msg.Success != 1)
         {
             // Unable to login
-            LobbySceneManager.Instance.EnableInputs();
+            LobbyScene.Instance.EnableInputs();
         }
         else
         {
             // Successfull login
+            // This is where we are going to save data about ourself
+            self = new Account();
+            self.ActiveConnection = msg.ConnectionId;
+            self.Username = msg.Username;
+            self.Discriminator = msg.Discriminator;
+
+            token = msg.Token;
+
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Hub");
         }
     }
 
     private void OnCreateAccount(Net_OnCreateAccount msg)
     {
-        LobbySceneManager.Instance.EnableInputs();
-        LobbySceneManager.Instance.ChangeAuthenticationMessage(msg.Information);
+        LobbyScene.Instance.EnableInputs();
+        LobbyScene.Instance.ChangeAuthenticationMessage(msg.Information);
     }
     #endregion
 
@@ -168,24 +180,24 @@ public class Client : MonoBehaviour
         if (!Utility.IsUsername(username))
         {
             // Invalid username
-            LobbySceneManager.Instance.ChangeAuthenticationMessage("Username is invalid!");
-            LobbySceneManager.Instance.EnableInputs();
+            LobbyScene.Instance.ChangeAuthenticationMessage("Username is invalid!");
+            LobbyScene.Instance.EnableInputs();
             return;
         }
 
         if (!Utility.IsUsername(username))
         {
             // Invalid username
-            LobbySceneManager.Instance.ChangeAuthenticationMessage("Email is invalid!");
-            LobbySceneManager.Instance.EnableInputs();
+            LobbyScene.Instance.ChangeAuthenticationMessage("Email is invalid!");
+            LobbyScene.Instance.EnableInputs();
             return;
         }
 
         if (string.IsNullOrEmpty(password))
         {
             // Invalid username
-            LobbySceneManager.Instance.ChangeAuthenticationMessage("Password is empty!");
-            LobbySceneManager.Instance.EnableInputs();
+            LobbyScene.Instance.ChangeAuthenticationMessage("Password is empty!");
+            LobbyScene.Instance.EnableInputs();
             return;
         }
 
@@ -195,7 +207,7 @@ public class Client : MonoBehaviour
         msg.Password = Utility.Sha256FromString(password);
         msg.Email = email;
 
-        LobbySceneManager.Instance.ChangeAuthenticationMessage("Sending request ...");
+        LobbyScene.Instance.ChangeAuthenticationMessage("Sending request ...");
         SendServer(msg);
     }
 
@@ -204,16 +216,16 @@ public class Client : MonoBehaviour
         if (!Utility.IsUsernameAndDiscriminator(usernameOrEmail) && !Utility.IsEmail(usernameOrEmail))
         {
             // Invalid username
-            LobbySceneManager.Instance.ChangeAuthenticationMessage("Email or Username#Discriminator is invalid");
-            LobbySceneManager.Instance.EnableInputs();
+            LobbyScene.Instance.ChangeAuthenticationMessage("Email or Username#Discriminator is invalid");
+            LobbyScene.Instance.EnableInputs();
             return;
         }
 
         if (string.IsNullOrEmpty(password))
         {
             // Invalid username
-            LobbySceneManager.Instance.ChangeAuthenticationMessage("Password is empty!");
-            LobbySceneManager.Instance.EnableInputs();
+            LobbyScene.Instance.ChangeAuthenticationMessage("Password is empty!");
+            LobbyScene.Instance.EnableInputs();
             return;
         }
 
@@ -221,7 +233,7 @@ public class Client : MonoBehaviour
         msg.UsernameOrEmail = usernameOrEmail;
         msg.Password = Utility.Sha256FromString(password);
 
-        LobbySceneManager.Instance.ChangeAuthenticationMessage("Sending login request ...");
+        LobbyScene.Instance.ChangeAuthenticationMessage("Sending login request ...");
         SendServer(msg);
     }
 
