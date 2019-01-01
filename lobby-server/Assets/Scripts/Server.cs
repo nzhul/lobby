@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -113,9 +114,53 @@ public class Server : MonoBehaviour
             case NetOperationCode.LoginRequest:
                 LoginRequest(connectionId, channelId, recievingHostId, (Net_LoginRequest)msg);
                 break;
+            case NetOperationCode.AddFollow:
+                AddFollow(connectionId, channelId, recievingHostId, (Net_AddFollow)msg);
+                break;
+            case NetOperationCode.RemoveFollow:
+                RemoveFollow(connectionId, channelId, recievingHostId, (Net_RemoveFollow)msg);
+                break;
+            case NetOperationCode.RequestFollow:
+                RequestFollow(connectionId, channelId, recievingHostId, (Net_RequestFollow)msg);
+                break;
             default:
                 break;
         }
+    }
+
+    private void RequestFollow(int connectionId, int channelId, int recievingHostId, Net_RequestFollow msg)
+    {
+    }
+
+    private void RemoveFollow(int connectionId, int channelId, int recievingHostId, Net_RemoveFollow msg)
+    {
+    }
+
+    private void AddFollow(int connectionId, int channelId, int recievingHostId, Net_AddFollow msg)
+    {
+        Net_OnAddFollow rmsg = new Net_OnAddFollow();
+
+        if (db.InsertFollow(msg.Token, msg.UsernameDiscriminatorOrEmail))
+        {
+            if (Utility.IsEmail(msg.UsernameDiscriminatorOrEmail))
+            {
+                // this is email
+                rmsg.Follow = db.FindAccountByEmail(msg.UsernameDiscriminatorOrEmail).GetAccount();
+            }
+            else
+            {
+                // this is username
+                string[] data = msg.UsernameDiscriminatorOrEmail.Split('#');
+                if (data[1] == null)
+                {
+                    return;
+                }
+
+                rmsg.Follow = db.FindAccountByUsernameAndDiscriminator(data[0], data[1]).GetAccount();
+            }
+        }
+
+        SendClient(recievingHostId, connectionId, rmsg);
     }
 
     private void CreateAccount(int connectionId, int channelId, int recievingHostId, Net_CreateAccount msg)

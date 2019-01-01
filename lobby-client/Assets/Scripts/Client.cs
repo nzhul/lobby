@@ -237,5 +237,29 @@ public class Client : MonoBehaviour
         SendServer(msg);
     }
 
+    public void SendAddFollow(string usernameOrEmail)
+    {
+        Net_AddFollow msg = new Net_AddFollow();
+        msg.Token = token;
+        msg.UsernameDiscriminatorOrEmail = usernameOrEmail;
+
+        SendServer(msg);
+    }
+
+    public void SendRemoveFollow(string username)
+    {
+        Net_RemoveFollow msg = new Net_RemoveFollow();
+
+        msg.Token = token;
+        msg.UsernameDiscriminator = username;
+    }
+
+    public void SendRequestFollow()
+    {
+        Net_RequestFollow msg = new Net_RequestFollow();
+        msg.Token = token;
+        SendServer(msg);
+    }
+
     #endregion
 }

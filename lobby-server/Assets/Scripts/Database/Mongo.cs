@@ -39,6 +39,61 @@ public class Mongo
     #endregion
 
     #region Insert
+    public bool InsertFollow(string token, string emailOrUsername)
+    {
+        FollowModel newFollow = new FollowModel();
+        newFollow.Sender = new MongoDBRef("account", FindAccountByToken(token)._id);
+
+        // start by getting the reference to our follow
+
+        if (!Utility.IsEmail(emailOrUsername))
+        {
+            // if it is username/discriminator
+            string[] data = emailOrUsername.Split('#');
+            if (data[1] != null)
+            {
+                AccountModel follow = FindAccountByUsernameAndDiscriminator(data[0], data[1]);
+                if (follow != null)
+                {
+                    newFollow.Target = new MongoDBRef("account", follow._id);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            // if it is email
+            AccountModel follow = FindAccountByEmail(emailOrUsername);
+            if (follow != null)
+            {
+                newFollow.Target = new MongoDBRef("account", follow._id);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        if (newFollow.Target != newFollow.Sender)
+        {
+            // Does the friendship already exists ?
+            var query = Query.And(
+                Query<FollowModel>.EQ(u => u.Sender, newFollow.Sender),
+                Query<FollowModel>.EQ(u => u.Target, newFollow.Target));
+
+            // if there is no friendship, create one!
+            if (follows.FindOne(query) == null)
+            {
+                follows.Insert(newFollow);
+            }
+        }
+
+        return false;
+    }
+
     public bool InsertAccount(string username, string password, string email)
     {
         if (!Utility.IsEmail(email))
@@ -151,6 +206,12 @@ public class Mongo
                         Query<AccountModel>.EQ(u => u.Username, username),
                         Query<AccountModel>.EQ(u => u.Discriminator, discriminator));
 
+        return accounts.FindOne(query);
+    }
+
+    public AccountModel FindAccountByToken(string token)
+    {
+        var query = Query<AccountModel>.EQ(u => u.Token, token);
         return accounts.FindOne(query);
     }
 

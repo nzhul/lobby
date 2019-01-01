@@ -12,6 +12,7 @@ public class HubScene : MonoBehaviour
     private void Start()
     {
         selfInformation.text = Client.Instance.self.Username + "#" + Client.Instance.self.Discriminator;
+        Client.Instance.SendRequestFollow();
     }
 
     #region Button 
@@ -25,13 +26,12 @@ public class HubScene : MonoBehaviour
             return;
         }
 
-        // Client instance send add follow
-
+        Client.Instance.SendAddFollow(usernameDiscriminator);
     }
 
     public void OnClickRemoveFollow(string username, string discriminator)
     {
-        // Client instance send remove follow
+        Client.Instance.SendRemoveFollow(username + "#" + discriminator); 
     }
 
     #endregion

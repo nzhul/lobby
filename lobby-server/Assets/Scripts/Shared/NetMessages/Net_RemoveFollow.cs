@@ -7,4 +7,8 @@ public class Net_RemoveFollow : NetMessage
     {
         OperationCode = NetOperationCode.RemoveFollow;
     }
+
+    public string Token { get; set; }
+
+    public string UsernameDiscriminator { get; set; }
 }
