@@ -124,9 +124,29 @@ public class Client : MonoBehaviour
             case NetOperationCode.OnLoginRequest:
                 OnLoginRequest((Net_OnLoginRequest)msg);
                 break;
+            case NetOperationCode.OnAddFollow:
+                OnAddFollow((Net_OnAddFollow)msg);
+                break;
+            case NetOperationCode.OnRequestFollow:
+                OnRequestFollow((Net_OnRequestFollow)msg);
+                break;
             default:
                 break;
         }
+    }
+
+    private void OnRequestFollow(Net_OnRequestFollow msg)
+    {
+        foreach (var follow in msg.Follows)
+        {
+            HubScene.Instance.AddFollowToUI(follow);
+        }
+    }
+
+    private void OnAddFollow(Net_OnAddFollow msg)
+    {
+
+        HubScene.Instance.AddFollowToUI(msg.Follow);
     }
 
     private void OnLoginRequest(Net_OnLoginRequest msg)
@@ -252,6 +272,8 @@ public class Client : MonoBehaviour
 
         msg.Token = token;
         msg.UsernameDiscriminator = username;
+
+        SendServer(msg);
     }
 
     public void SendRequestFollow()

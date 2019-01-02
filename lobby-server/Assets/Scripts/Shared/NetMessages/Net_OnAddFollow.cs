@@ -1,4 +1,7 @@
-﻿public class Net_OnAddFollow : NetMessage
+﻿using System;
+
+[Serializable]
+public class Net_OnAddFollow : NetMessage
 {
     public Net_OnAddFollow()
     {

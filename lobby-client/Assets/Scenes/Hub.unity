@@ -814,7 +814,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1107906197}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1580663735}
+        m_MethodName: OnClickAddFollow
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_TypeName: UnityEngine.UI.Button+ButtonClickedEvent, UnityEngine.UI, Version=1.0.0.0,
       Culture=neutral, PublicKeyToken=null
 --- !u!114 &1107906197
@@ -1351,6 +1362,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   selfInformation: {fileID: 1413556342}
   addFollowInput: {fileID: 398483263}
+  followPrefab: {fileID: 2222224383207790911, guid: b7d6bf7e325556541837cc994863f3ae,
+    type: 3}
+  followContainer: {fileID: 1529753327}
 --- !u!1 &1628576591
 GameObject:
   m_ObjectHideFlags: 0

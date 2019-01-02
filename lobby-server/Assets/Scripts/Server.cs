@@ -130,10 +130,16 @@ public class Server : MonoBehaviour
 
     private void RequestFollow(int connectionId, int channelId, int recievingHostId, Net_RequestFollow msg)
     {
+        Net_OnRequestFollow rmsg = new Net_OnRequestFollow();
+
+        rmsg.Follows = db.FindAllFollowBy(msg.Token);
+
+        SendClient(recievingHostId, connectionId, rmsg);
     }
 
     private void RemoveFollow(int connectionId, int channelId, int recievingHostId, Net_RemoveFollow msg)
     {
+        db.RemoveFollow(msg.Token, msg.UsernameDiscriminator);
     }
 
     private void AddFollow(int connectionId, int channelId, int recievingHostId, Net_AddFollow msg)

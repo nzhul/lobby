@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
 using UnityEngine;
@@ -89,6 +91,8 @@ public class Mongo
             {
                 follows.Insert(newFollow);
             }
+
+            return true;
         }
 
         return false;
@@ -194,6 +198,12 @@ public class Mongo
 
     #region Fetch
 
+    public AccountModel FindAccountByObjectId(ObjectId id)
+    {
+        var query = Query<AccountModel>.EQ(u => u._id, id);
+        return accounts.FindOne(query);
+    }
+
     public AccountModel FindAccountByEmail(string email)
     {
         var query = Query<AccountModel>.EQ(u => u.Email, email);
@@ -215,8 +225,45 @@ public class Mongo
         return accounts.FindOne(query);
     }
 
+    public List<Account> FindAllFollowBy(string token)
+    {
+        var self = new MongoDBRef("account", FindAccountByToken(token)._id);
+        var query = Query<FollowModel>.EQ(f => f.Sender, self);
+
+        List<Account> followResponse = new List<Account>();
+        foreach (var f in follows.Find(query))
+        {
+            followResponse.Add(FindAccountByObjectId(f.Target.Id.AsObjectId).GetAccount());
+        }
+
+        return followResponse;
+    }
+
+    public FollowModel FindFollowByUsernameAndDiscriminator(string token, string usernameAndDiscriminator)
+    {
+        string[] data = usernameAndDiscriminator.Split('#');
+        if (data[1] != null)
+        {
+            var sender = new MongoDBRef("account", FindAccountByToken(token)._id);
+            var follow = new MongoDBRef("account", FindAccountByUsernameAndDiscriminator(data[0], data[1])._id);
+
+            var query = Query.And(
+                Query<FollowModel>.EQ(f => f.Sender, sender),
+                Query<FollowModel>.EQ(f => f.Target, follow));
+
+            return follows.FindOne(query);
+        }
+
+        return null;
+    }
+
     #endregion
 
     #region Delete
+    public void RemoveFollow(string token, string usernameDiscriminator)
+    {
+        ObjectId id = FindFollowByUsernameAndDiscriminator(token, usernameDiscriminator)._id;
+        follows.Remove(Query<FollowModel>.EQ(f => f._id, id));
+    }
     #endregion
 }

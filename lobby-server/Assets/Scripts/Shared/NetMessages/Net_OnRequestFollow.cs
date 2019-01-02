@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
+[Serializable]
 public class Net_OnRequestFollow : NetMessage
 {
     public Net_OnRequestFollow()
@@ -7,5 +9,5 @@ public class Net_OnRequestFollow : NetMessage
         OperationCode = NetOperationCode.OnRequestFollow;
     }
 
-    public List<Account> Follow { get; set; }
+    public List<Account> Follows { get; set; }
 }
