@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -18,6 +19,8 @@ public class HubScene : MonoBehaviour
     [SerializeField]
     private Transform followContainer;
 
+    private Dictionary<string, GameObject> uiFollows = new Dictionary<string, GameObject>();
+
     private void Start()
     {
         Instance = this;
@@ -33,6 +36,8 @@ public class HubScene : MonoBehaviour
         followItem.transform.GetChild(1).GetComponent<Image>().color = (follow.Status != 0) ? Color.green : Color.gray;
         followItem.transform.GetChild(2).GetComponent<Button>().onClick.AddListener(delegate { Destroy(followItem); });
         followItem.transform.GetChild(2).GetComponent<Button>().onClick.AddListener(delegate { OnClickRemoveFollow(follow.Username, follow.Discriminator); });
+
+        uiFollows.Add(follow.Username + "#" + follow.Discriminator, followItem);
     }
 
     #region Button 
@@ -52,6 +57,12 @@ public class HubScene : MonoBehaviour
     public void OnClickRemoveFollow(string username, string discriminator)
     {
         Client.Instance.SendRemoveFollow(username + "#" + discriminator);
+        uiFollows.Remove(username + "#" + discriminator);
+    }
+
+    public void UpdateFollow(Account follow)
+    {
+        uiFollows[follow.Username + "#" + follow.Discriminator].transform.GetChild(1).GetComponent<Image>().color = (follow.Status != 0) ? Color.green : Color.gray;
     }
 
     #endregion

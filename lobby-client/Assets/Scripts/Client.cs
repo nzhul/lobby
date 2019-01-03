@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -130,9 +131,17 @@ public class Client : MonoBehaviour
             case NetOperationCode.OnRequestFollow:
                 OnRequestFollow((Net_OnRequestFollow)msg);
                 break;
+            case NetOperationCode.FollowUpdate:
+                FollowUpdate((Net_FollowUpdate)msg);
+                break;
             default:
                 break;
         }
+    }
+
+    private void FollowUpdate(Net_FollowUpdate msg)
+    {
+        HubScene.Instance.UpdateFollow(msg.Follow);
     }
 
     private void OnRequestFollow(Net_OnRequestFollow msg)

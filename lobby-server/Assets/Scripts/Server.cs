@@ -129,7 +129,7 @@ public class Server : MonoBehaviour
                 continue;
             }
 
-            SendClient(recievingHostId, connectionId, msg);
+            SendClient(recievingHostId, f.ActiveConnection, msg);
         }
     }
 
@@ -246,7 +246,7 @@ public class Server : MonoBehaviour
                     continue;
                 }
 
-                SendClient(recievingHostId, connectionId, fu);
+                SendClient(recievingHostId, f.ActiveConnection, fu);
             }
         }
         else
