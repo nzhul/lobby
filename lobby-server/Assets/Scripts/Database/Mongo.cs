@@ -38,6 +38,17 @@ public class Mongo
     }
 
     #region Update
+    public void UpdateAccountAfterDisconnection(string email)
+    {
+        var query = Query<AccountModel>.EQ(u => u.Email, email);
+        var dbAccount = accounts.FindOne(query);
+
+        dbAccount.Token = "";
+        dbAccount.ActiveConnection = 0;
+        dbAccount.Status = 0;
+
+        accounts.Update(query, Update<AccountModel>.Replace(dbAccount));
+    }
     #endregion
 
     #region Insert
@@ -144,6 +155,7 @@ public class Mongo
 
         return true;
     }
+
     public AccountModel LoginAccount(string usernameOrEmail, string password, int connectionId, string token)
     {
         AccountModel dbAccount = null;
@@ -197,6 +209,11 @@ public class Mongo
     #endregion
 
     #region Fetch
+    public AccountModel FindAccountByConnectionId(int connectionId)
+    {
+        var query = Query<AccountModel>.EQ(u => u.ActiveConnection, connectionId);
+        return accounts.FindOne(query);
+    }
 
     public AccountModel FindAccountByObjectId(ObjectId id)
     {
@@ -225,20 +242,6 @@ public class Mongo
         return accounts.FindOne(query);
     }
 
-    public List<Account> FindAllFollowBy(string token)
-    {
-        var self = new MongoDBRef("account", FindAccountByToken(token)._id);
-        var query = Query<FollowModel>.EQ(f => f.Sender, self);
-
-        List<Account> followResponse = new List<Account>();
-        foreach (var f in follows.Find(query))
-        {
-            followResponse.Add(FindAccountByObjectId(f.Target.Id.AsObjectId).GetAccount());
-        }
-
-        return followResponse;
-    }
-
     public FollowModel FindFollowByUsernameAndDiscriminator(string token, string usernameAndDiscriminator)
     {
         string[] data = usernameAndDiscriminator.Split('#');
@@ -255,6 +258,34 @@ public class Mongo
         }
 
         return null;
+    }
+
+    public List<Account> FindAllFollowFrom(string token)
+    {
+        var self = new MongoDBRef("account", FindAccountByToken(token)._id);
+        var query = Query<FollowModel>.EQ(f => f.Sender, self);
+
+        List<Account> followResponse = new List<Account>();
+        foreach (var f in follows.Find(query))
+        {
+            followResponse.Add(FindAccountByObjectId(f.Target.Id.AsObjectId).GetAccount());
+        }
+
+        return followResponse;
+    }
+
+    public List<Account> FindAllFollowBy(string email)
+    {
+        var self = new MongoDBRef("account", FindAccountByEmail(email)._id);
+        var query = Query<FollowModel>.EQ(f => f.Target, self);
+
+        List<Account> followResponse = new List<Account>();
+        foreach (var f in follows.Find(query))
+        {
+            followResponse.Add(FindAccountByObjectId(f.Sender.Id.AsObjectId).GetAccount());
+        }
+
+        return followResponse;
     }
 
     #endregion

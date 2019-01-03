@@ -27,4 +27,6 @@ public static class NetOperationCode
 
     public const int OnAddFollow = 8;
     public const int OnRequestFollow = 9;
+
+    public const int FollowUpdate = 10;
 }

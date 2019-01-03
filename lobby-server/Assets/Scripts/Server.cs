@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -89,7 +88,7 @@ public class Server : MonoBehaviour
                 Debug.Log(string.Format("User {0} has connected throught host {1}", connectionId, recievingHostId));
                 break;
             case NetworkEventType.DisconnectEvent:
-                Debug.Log(string.Format("User {0} has disconnected :(", connectionId));
+                DisconnectEvent(recievingHostId, connectionId);
                 break;
             case NetworkEventType.Nothing:
                 break;
@@ -100,7 +99,40 @@ public class Server : MonoBehaviour
                 break;
         }
     }
+
     #region OnData
+    private void DisconnectEvent(int recievingHostId, int connectionId)
+    {
+        Debug.Log(string.Format("User {0} has disconnected :(", connectionId));
+
+        // Get a reference to the connected Account
+        AccountModel dbAccount = db.FindAccountByConnectionId(connectionId);
+
+
+        // Just making sure he was indeed authenticated
+        if (dbAccount == null)
+        {
+            return;
+        }
+
+        db.UpdateAccountAfterDisconnection(dbAccount.Email);
+
+        // Prepare and send our update message
+        Net_FollowUpdate msg = new Net_FollowUpdate();
+        AccountModel updatedAccount = db.FindAccountByEmail(dbAccount.Email);
+        msg.Follow = updatedAccount.GetAccount();
+
+        foreach (var f in db.FindAllFollowBy(dbAccount.Email))
+        {
+            if (f.ActiveConnection == 0)
+            {
+                continue;
+            }
+
+            SendClient(recievingHostId, connectionId, msg);
+        }
+    }
+
     private void OnData(int connectionId, int channelId, int recievingHostId, NetMessage msg)
     {
         switch (msg.OperationCode)
@@ -132,7 +164,7 @@ public class Server : MonoBehaviour
     {
         Net_OnRequestFollow rmsg = new Net_OnRequestFollow();
 
-        rmsg.Follows = db.FindAllFollowBy(msg.Token);
+        rmsg.Follows = db.FindAllFollowFrom(msg.Token);
 
         SendClient(recievingHostId, connectionId, rmsg);
     }
@@ -202,6 +234,20 @@ public class Server : MonoBehaviour
             rmsg.Discriminator = dbAccount.Discriminator;
             rmsg.Token = randomToken;
             rmsg.ConnectionId = connectionId;
+
+            // Prepare and send our update message
+            Net_FollowUpdate fu = new Net_FollowUpdate();
+            fu.Follow = dbAccount.GetAccount();
+
+            foreach (var f in db.FindAllFollowBy(dbAccount.Email))
+            {
+                if (f.ActiveConnection == 0)
+                {
+                    continue;
+                }
+
+                SendClient(recievingHostId, connectionId, fu);
+            }
         }
         else
         {
